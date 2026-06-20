@@ -1,0 +1,24 @@
+# backend/.htaccess
+Options -Indexes
+RewriteEngine On
+
+RewriteRule ^api/create/?$ api/create.php [L,QSA]
+RewriteRule ^api/([a-fA-F0-9]{10})/logs/?$ api/logs.php?hash=$1 [L,QSA]
+
+RewriteCond %{REQUEST_METHOD} DELETE
+RewriteRule ^api/([a-fA-F0-9]{10})/?$ api/delete.php?hash=$1 [L,QSA]
+
+# All other GET/POST/etc for the mock endpoints
+RewriteRule ^api/([a-fA-F0-9]{10})/?$ api/serve.php?hash=$1 [L,QSA]
+
+# Block direct access to these folders
+RewriteRule ^(config|cron|db) - [F]
+
+# Block raw files ending with .log or starting with .
+<FilesMatch "(\.log|^\.)">
+    Require all denied
+</FilesMatch>
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L,QSA]

@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hero — Organic Blob</title>
+
+  <!-- Distinctive font pairing: Syne (display) + Outfit (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --accent:       #CC44FF;
+      --accent-dim:   #7733BB;
+      --bg:           #05010D;
+      --text:         #FFFFFF;
+      --text-muted:   rgba(255,255,255,0.48);
+      --glass:        rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.09);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+      color: var(--text);
+    }
+
+    /* ── Canvas lives behind everything ─────────────────────────────── */
+    #canvas-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    /* ── Overlay ─────────────────────────────────────────────────────── */
+    #ui {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAV ─────────────────────────────────────────────────────────── */
+    nav {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 56px;
+      opacity: 0; /* GSAP entrance */
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .logo em { color: var(--accent); font-style: normal; }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-pill {
+      padding: 9px 22px;
+      border: 1px solid rgba(204,68,255,0.35);
+      background: rgba(204,68,255,0.08);
+      color: var(--accent);
+      border-radius: 100px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .22s;
+      letter-spacing: 0.01em;
+    }
+    .nav-pill:hover {
+      background: rgba(204,68,255,0.22);
+      border-color: rgba(204,68,255,0.65);
+    }
+
+    /* ── HERO CONTENT (left column) ───────────────────────────────────── */
+    .hero-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 0 56px;
+    }
+
+    .hero-left {
+      max-width: 500px;
+      pointer-events: auto;
+    }
+
+    /* tag badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 13px 5px 9px;
+      border: 1px solid rgba(204,68,255,0.28);
+      background: rgba(204,68,255,0.07);
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+      opacity: 0; /* GSAP */
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 2.2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.3; transform:scale(.7); }
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.6rem, 4.2vw, 4.0rem);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      margin-bottom: 22px;
+      opacity: 0; /* GSAP */
+    }
+    h1 .g {
+      background: linear-gradient(125deg, #EE88FF 0%, #CC44FF 40%, #6622CC 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sub {
+      font-size: 1.0rem;
+      font-weight: 300;
+      line-height: 1.78;
+      color: var(--text-muted);
+      margin-bottom: 38px;
+      opacity: 0; /* GSAP */
+    }
+
+    .ctas {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      opacity: 0; /* GSAP */
+    }
+
+    .btn-main {
+      padding: 13px 30px;
+      background: linear-gradient(130deg, #CC44FF 0%, #7722CC 100%);
+      border: none;
+      border-radius: 100px;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: all .25s;
+      box-shadow: 0 0 28px rgba(204,68,255,.4);
+    }
+    .btn-main:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 48px rgba(204,68,255,.65);
+    }
+
+    .btn-ghost {
+      padding: 12px 24px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 100px;
+      color: var(--text-muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all .22s;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .btn-ghost:hover {
+      background: rgba(255,255,255,.07);
+      color: var(--text);
+      border-color: rgba(255,255,255,.18);
+    }
+    .play-icon {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── STATS bar (bottom-left) ──────────────────────────────────────── */
+    .stats {
+      pointer-events: none;
+      padding: 0 56px 44px;
+      display: flex;
+      gap: 52px;
+      opacity: 0; /* GSAP */
+    }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.03em;
+    }
+    .stat-num span { color: var(--accent); }
+    .stat-lbl {
+      font-size: 0.70rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* ── Vertical divider right-edge of text area ─────────────────────── */
+    .vline {
+      position: fixed;
+      left: 46%;
+      top: 18%;
+      height: 64%;
+      width: 1px;
+      background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(204,68,255,.18) 30%,
+        rgba(204,68,255,.18) 70%,
+        transparent 100%);
+      z-index: 9;
+      opacity: 0; /* GSAP */
+    }
+
+    /* ── Scroll pulse ─────────────────────────────────────────────────── */
+    .scroll-cue {
+      position: fixed;
+      bottom: 44px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 11;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0; /* GSAP */
+      pointer-events: none;
+    }
+    .scroll-cue span {
+      font-size: .65rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .scroll-line {
+      width: 1px; height: 36px;
+      background: linear-gradient(to bottom, transparent, var(--accent));
+      animation: scrollPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%,100% { opacity:.3; transform:scaleY(1); }
+      50%      { opacity:1;  transform:scaleY(1.15); }
+    }
+
+    /* ── Responsive ───────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      nav { padding: 20px 24px; }
+      .nav-links { display: none; }
+      .hero-body  { padding: 0 24px; }
+      .hero-left  { max-width: 100%; }
+      h1 { font-size: 2.4rem; }
+      .stats { padding: 0 24px 36px; gap: 28px; }
+      .vline { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Canvas container ══════════════════════════════════════════════════ -->
+<div id="canvas-wrap"></div>
+
+<!-- ═══ UI Overlay ════════════════════════════════════════════════════════ -->
+<div id="ui">
+  <nav id="nav">
+    <div class="logo">orb<em>.</em>ai</div>
+    <ul class="nav-links">
+      <li><a href="#">Product</a></li>
+      <li><a href="#">Docs</a></li>
+      <li><a href="#">Pricing</a></li>
+      <li><a href="#">Blog</a></li>
+    </ul>
+    <button class="nav-pill">Get Access</button>
+  </nav>
+
+  <div class="hero-body">
+    <div class="hero-left">
+      <div class="badge" id="badge">
+        <span class="badge-dot"></span>
+        Procedural · Real-time
+      </div>
+      <h1 id="h1">
+        Shapes That<br>
+        <span class="g">Breathe &amp; Think</span>
+      </h1>
+      <p class="sub" id="sub">
+        A shader-driven creative engine where every surface<br>
+        displaces, morphs, and glows — all in realtime.
+      </p>
+      <div class="ctas" id="ctas">
+        <button class="btn-main">Start Building</button>
+        <button class="btn-ghost">
+          <span class="play-icon">
+            <svg width="8" height="10" viewBox="0 0 8 10" fill="none">
+              <path d="M1 1L7 5L1 9V1Z" fill="currentColor"/>
+            </svg>
+          </span>
+          See Demo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats">
+    <div>
+      <div class="stat-num">256<span>²</span></div>
+      <div class="stat-lbl">Vertex Mesh</div>
+    </div>
+    <div>
+      <div class="stat-num">5<span>oct</span></div>
+      <div class="stat-lbl">FBM Layers</div>
+    </div>
+    <div>
+      <div class="stat-num">60<span>fps</span></div>
+      <div class="stat-lbl">Realtime GPU</div>
+    </div>
+  </div>
+</div>
+
+<div class="vline" id="vline"></div>
+
+<div class="scroll-cue" id="scroll-cue">
+  <div class="scroll-line"></div>
+  <span>Scroll</span>
+</div>
+
+<!-- ═══ GSAP ══════════════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+<!-- ═══ Three.js via importmap ════════════════════════════════════════════ -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
+
+const gsap = window.gsap;
+
+/* ════════════════════════════════════════════════════════════════════════
+   RENDERER
+   ════════════════════════════════════════════════════════════════════════ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping        = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 0, 5);
+
+/* ════════════════════════════════════════════════════════════════════════
+   BACKGROUND — procedural radial gradient (fullscreen quad)
+   ════════════════════════════════════════════════════════════════════════ */
+const bgU = { uTime: { value: 0.0 } };
+
+scene.add(new THREE.Mesh(
+  new THREE.PlaneGeometry(2, 2),
+  new THREE.ShaderMaterial({
+    uniforms: bgU,
+    depthWrite: false,
+    depthTest:  false,
+    vertexShader: `
+      varying vec2 vUv;
+      void main(){
+        vUv = uv;
+        gl_Position = vec4(position.xy, 0.9999, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      varying vec2  vUv;
+
+      void main(){
+        /* Centre of glow biased toward the right (blob side) */
+        vec2  uv = vUv - vec2(0.64, 0.50);
+        float d  = length(uv * vec2(1.0, 1.3)) * 1.85;
+
+        vec3 c0 = vec3(0.24, 0.03, 0.42);   /* rich purple core  */
+        vec3 c1 = vec3(0.06, 0.01, 0.18);   /* deep indigo mid   */
+        vec3 c2 = vec3(0.02, 0.00, 0.06);   /* near-black edge   */
+
+        float t1 = smoothstep(0.00, 0.55, d);
+        float t2 = smoothstep(0.48, 1.05, d);
+        vec3  col = mix(c0, c1, t1);
+              col = mix(col, c2, t2);
+
+        /* subtle slow breathe */
+        col *= 1.0 + 0.035 * sin(uTime * 0.26);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+  })
+));
+
+/* ════════════════════════════════════════════════════════════════════════
+   PARTICLES — Float32Array, scalable & zero-texture
+   ════════════════════════════════════════════════════════════════════════ */
+const NP  = 4200;
+const pp  = new Float32Array(NP * 3);
+const pc  = new Float32Array(NP * 3);
+const ps  = new Float32Array(NP);
+
+for (let i = 0; i < NP; i++) {
+  const r     = 6.0 + Math.random() * 18.0;
+  const theta = Math.random() * Math.PI * 2.0;
+  const phi   = Math.acos(2.0 * Math.random() - 1.0);
+  pp[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+  pp[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+  pp[i*3+2] = r * Math.cos(phi);
+
+  const rn = Math.random();
+  if (rn < 0.54) {                    /* purple */
+    pc[i*3]=.25+Math.random()*.3; pc[i*3+1]=.01; pc[i*3+2]=.50+Math.random()*.4;
+  } else if (rn < 0.80) {             /* magenta */
+    pc[i*3]=.55+Math.random()*.4; pc[i*3+1]=.04; pc[i*3+2]=.68+Math.random()*.3;
+  } else {                            /* white-blue */
+    pc[i*3]=.65+Math.random()*.3; pc[i*3+1]=.55+Math.random()*.2; pc[i*3+2]=1.0;
+  }
+  ps[i] = 0.3 + Math.random() * 2.5;
+}
+
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pp, 3));
+pGeo.setAttribute('aColor',   new THREE.BufferAttribute(pc, 3));
+pGeo.setAttribute('aSize',    new THREE.BufferAttribute(ps, 1));
+
+const pU   = { uTime: { value: 0.0 } };
+const pMat = new THREE.ShaderMaterial({
+  uniforms: pU,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  vertexShader: `
+    attribute vec3  aColor;
+    attribute float aSize;
+    varying vec3    vColor;
+    uniform float   uTime;
+    void main(){
+      vColor = aColor;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      float tw = .55 + .45*sin(uTime*1.2 + position.x*4.6 + position.y*2.2 + position.z*3.1);
+      gl_PointSize  = aSize * tw * (290.0 / -mv.z);
+      gl_Position   = projectionMatrix * mv;
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+    void main(){
+      float d = length(gl_PointCoord - .5);
+      if(d > .5) discard;
+      float a = 1.0 - smoothstep(.12, .5, d);
+      gl_FragColor = vec4(vColor, a * .65);
+    }
+  `,
+});
+scene.add(new THREE.Points(pGeo, pMat));
+
+/* ════════════════════════════════════════════════════════════════════════
+   NOISE LIBRARY  (Stefan Gustavson Simplex 3D + 5-octave FBM)
+   ════════════════════════════════════════════════════════════════════════ */
+const NOISE = `
+  vec3  _m3(vec3  x){ return x-floor(x*(1./289.))*289.; }
+  vec4  _m4(vec4  x){ return x-floor(x*(1./289.))*289.; }
+  vec4  _pm(vec4  x){ return _m4(((x*34.)+1.)*x); }
+  vec4  _ti(vec4  r){ return 1.79284291400159-.85373472095314*r; }
+
+  float snoise(vec3 v){
+    const vec2 C=vec2(1./6.,1./3.);
+    const vec4 D=vec4(0.,.5,1.,2.);
+    vec3 i =floor(v+dot(v,C.yyy));
+    vec3 x0=v-i+dot(i,C.xxx);
+    vec3 g =step(x0.yzx,x0.xyz);
+    vec3 l =1.-g;
+    vec3 i1=min(g.xyz,l.zxy);
+    vec3 i2=max(g.xyz,l.zxy);
+    vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
+    i=_m3(i);
+    vec4 p=_pm(_pm(_pm(i.z+vec4(0.,i1.z,i2.z,1.))+i.y+vec4(0.,i1.y,i2.y,1.))+i.x+vec4(0.,i1.x,i2.x,1.));
+    float n_=.142857142857; vec3 ns=n_*D.wyz-D.xzx;
+    vec4 j=p-49.*floor(p*ns.z*ns.z);
+    vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.*x_);
+    vec4 xv=x_*ns.x+ns.yyyy; vec4 yv=y_*ns.x+ns.yyyy;
+    vec4 h=1.-abs(xv)-abs(yv);
+    vec4 b0=vec4(xv.xy,yv.xy); vec4 b1=vec4(xv.zw,yv.zw);
+    vec4 s0=floor(b0)*2.+1.; vec4 s1=floor(b1)*2.+1.;
+    vec4 sh=-step(h,vec4(0.));
+    vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+    vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y);
+    vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+    vec4 nm=_ti(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+    p0*=nm.x; p1*=nm.y; p2*=nm.z; p3*=nm.w;
+    vec4 m=max(.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.);
+    m=m*m;
+    return 42.*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+  }
+
+  float fbm(vec3 p){
+    float v=0.,a=.52,f=1.;
+    for(int i=0;i<5;i++){ v+=a*snoise(p*f); f*=2.05; a*=.5; }
+    return v;
+  }
+`;
+
+/* ════════════════════════════════════════════════════════════════════════
+   BLOB — SphereGeometry(1.5, 256, 256) + custom vertex/fragment shaders
+   ════════════════════════════════════════════════════════════════════════ */
+const blobVert = NOISE + `
+  uniform float uTime;
+  uniform float uStr;
+  varying vec3  vWN;    /* world normal  */
+  varying vec3  vWP;    /* world pos     */
+  varying float vN;     /* noise value   */
+
+  void main(){
+    float n = fbm(position * 1.10 + uTime * 0.30);
+
+    /* finite-difference normal reconstruction */
+    const float E = 0.025;
+    float nx = fbm((position+vec3(E,0.,0.))*1.1+uTime*.3) - fbm((position-vec3(E,0.,0.))*1.1+uTime*.3);
+    float ny = fbm((position+vec3(0.,E,0.))*1.1+uTime*.3) - fbm((position-vec3(0.,E,0.))*1.1+uTime*.3);
+    float nz = fbm((position+vec3(0.,0.,E))*1.1+uTime*.3) - fbm((position-vec3(0.,0.,E))*1.1+uTime*.3);
+    vec3 grad = vec3(nx,ny,nz)/(2.*E);
+    vec3 dN   = normalize(normal - grad * uStr);
+
+    vec3 disp = position + normal * n * uStr;
+    vN  = n;
+    vWN = normalize((modelMatrix * vec4(dN,0.)).xyz);
+    vWP = (modelMatrix * vec4(disp,1.)).xyz;
+    gl_Position = projectionMatrix * viewMatrix * vec4(vWP,1.);
+  }
+`;
+
+const blobFrag = `
+  uniform vec3  uCP;      /* camera position   */
+  uniform vec3  uColA;    /* peak  #CC44FF     */
+  uniform vec3  uColB;    /* mid   #4422AA     */
+  uniform vec3  uColC;    /* dark  #1A0A2E     */
+  uniform float uEm;      /* 0..1, GSAP-driven */
+
+  varying vec3  vWN;
+  varying vec3  vWP;
+  varying float vN;
+
+  void main(){
+    vec3  N  = normalize(vWN);
+    vec3  V  = normalize(uCP - vWP);
+    float NV = max(dot(N,V), 0.0);
+
+    /* Fresnel rim (matches spec pow=3.0) */
+    float fr  = pow(1.0-NV, 3.0);
+    float fr2 = pow(1.0-NV, 1.5);
+
+    /* GSAP-cycled emissive colour */
+    vec3 em = mix(uColC, mix(uColB, uColA, uEm), uEm);
+
+    /* Procedural dark body with noise-based micro-variation */
+    float nA   = vN * .5 + .5;
+    vec3  body = mix(vec3(.030,.004,.10), vec3(.100,.018,.22), nA);
+
+    /* Compose: body + Fresnel rim + inner SSS bleed */
+    vec3 col = body;
+    col += em * fr  * 1.75;
+    col += em * fr2 * uEm * .55;
+    col += em * (1.-NV) * uEm * .30;
+
+    /* Specular */
+    vec3  L  = normalize(vec3(1.2,1.5,1.0));
+    float sp = pow(max(dot(reflect(-L,N),V),0.),44.0);
+    col += vec3(.50,.18,.88) * sp * .28;
+
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+const blobU = {
+  uTime: { value: 0.0 },
+  uStr:  { value: 0.62 },
+  uCP:   { value: camera.position },
+  uColA: { value: new THREE.Color(0xCC44FF) },
+  uColB: { value: new THREE.Color(0x4422AA) },
+  uColC: { value: new THREE.Color(0x1A0A2E) },
+  uEm:   { value: 0.0 },   /* starts at 0 — GSAP entrance will open it */
+};
+
+const blob = new THREE.Mesh(
+  new THREE.SphereGeometry(1.5, 256, 256),
+  new THREE.ShaderMaterial({ vertexShader: blobVert, fragmentShader: blobFrag, uniforms: blobU })
+);
+
+/* Position blob on the RIGHT side of the viewport */
+blob.position.set(1.85, 0.0, 0.0);
+blob.scale.setScalar(0.0);   /* starts invisible — GSAP entrance */
+scene.add(blob);
+
+/* ════════════════════════════════════════════════════════════════════════
+   POST-PROCESSING
+   ════════════════════════════════════════════════════════════════════════ */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+
+const bloom = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  0.0,   /* starts at 0, GSAP opens it */
+  0.80,
+  0.30
+);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+/* ════════════════════════════════════════════════════════════════════════
+   GSAP — ENTRANCE + LOOP
+   ════════════════════════════════════════════════════════════════════════ */
+const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+/* HTML elements enter first */
+tl.to('#nav',    { opacity: 1, y: 0, duration: .9 },        0.1)
+  .to('#badge',  { opacity: 1, y: 0, duration: .8 },        0.35)
+  .to('#h1',     { opacity: 1, y: 0, duration: .85 },       0.50)
+  .to('#sub',    { opacity: 1, y: 0, duration: .80 },       0.65)
+  .to('#ctas',   { opacity: 1, y: 0, duration: .75 },       0.80)
+  .to('#stats',  { opacity: 1, y: 0, duration: .70 },       0.95)
+  .to('#vline',  { opacity: 1,       duration: 1.2 },       0.60)
+  .to('#scroll-cue', { opacity: 1,   duration: .8  },       1.20);
+
+/* set initial "from" state (GSAP doesn't auto-set these from CSS opacity:0) */
+gsap.set(['#nav','#badge','#h1','#sub','#ctas','#stats'], { y: 22 });
+
+/* Blob scales in */
+const bScale = { s: 0.0, em: 0.0, bloom: 0.0 };
+tl.to(bScale, {
+  s: 1.0, em: 1.0, bloom: 1.5,
+  duration: 1.8,
+  ease: 'back.out(1.15)',
+  onUpdate() {
+    blob.scale.setScalar(bScale.s);
+    blobU.uEm.value  = bScale.em;
+    bloom.strength   = bScale.bloom;
+  },
+}, 0.55);
+
+/* Continuous emission cycle (ease-in-out sine) */
+const loopState = { em: 1.0, bloom: 1.5 };
+gsap.to(loopState, {
+  em: 0.06, bloom: 0.32,
+  duration: 3.8,
+  ease: 'sine.inOut',
+  yoyo: true,
+  repeat: -1,
+  delay: 2.4,   /* start after entrance finishes */
+  onUpdate() {
+    blobU.uEm.value = loopState.em;
+    bloom.strength  = loopState.bloom;
+  },
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   SUBTLE MOUSE PARALLAX — blob drifts very gently toward cursor
+   ════════════════════════════════════════════════════════════════════════ */
+const mouse = { x: 0, y: 0 };
+window.addEventListener('mousemove', e => {
+  mouse.x = (e.clientX / innerWidth  - 0.5) *  0.30;
+  mouse.y = (e.clientY / innerHeight - 0.5) * -0.20;
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   RESIZE
+   ════════════════════════════════════════════════════════════════════════ */
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+
+/* ════════════════════════════════════════════════════════════════════════
+   RENDER LOOP
+   ════════════════════════════════════════════════════════════════════════ */
+const clock = new THREE.Clock();
+
+(function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  blobU.uTime.value = t;
+  bgU.uTime.value   = t;
+  pU.uTime.value    = t;
+
+  /* slow Y-axis self-rotation + gentle X drift */
+  blob.rotation.y += 0.0010;
+  blob.rotation.x += 0.0003;
+
+  /* smooth mouse parallax — offset around the right-side position */
+  blob.position.x += (1.85 + mouse.x - blob.position.x) * 0.04;
+  blob.position.y += (       mouse.y - blob.position.y) * 0.04;
+
+  composer.render();
+})();
+</script>
+</body>
+</html>
