@@ -1,12 +1,11 @@
-import { lazy, Suspense, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Infinity as InfinityIcon, ShieldCheck } from "lucide-react";
 import { MagneticButton } from "./shared/MagneticButton";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-
-const HeroBlob = lazy(() => import("./HeroBlob"));
+import HeroBlobCanvas from "../HeroBlobCanvas";
 
 const WORDMARK = "MockDrop";
 
@@ -107,23 +106,12 @@ export const Hero = () => {
   const root = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const reduced = usePrefersReducedMotion();
-  const pointer = useRef({ x: 0, y: 0 });
 
   // Mount the blob only on >= 768px viewports and when motion is allowed
   const [canMountBlob, setCanMountBlob] = useState(false);
   useGSAP(() => {
     if (typeof window === "undefined") return;
     setCanMountBlob(window.innerWidth >= 768);
-  }, []);
-
-  // Global pointer tracking for blob cursor-follow.
-  useGSAP(() => {
-    const onMove = (e: MouseEvent) => {
-      pointer.current.x = (e.clientX / window.innerWidth) * 2 - 1;
-      pointer.current.y = -((e.clientY / window.innerHeight) * 2 - 1);
-    };
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
   // Load sequence: 400ms void → wordmark letter dissolve → cross-fade group.
@@ -186,11 +174,7 @@ export const Hero = () => {
       </svg>
 
       {/* Blob canvas */}
-      {canMountBlob && !reduced && (
-        <Suspense fallback={null}>
-          <HeroBlob disabled={false} pointer={pointer} />
-        </Suspense>
-      )}
+      {canMountBlob && !reduced && <HeroBlobCanvas />}
       {(!canMountBlob || reduced) && (
         <div
           aria-hidden
