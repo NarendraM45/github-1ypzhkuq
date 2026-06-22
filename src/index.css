@@ -293,23 +293,33 @@
 }
 
 /* GlowBorder — reusable rotating conic border */
-.glow-border { position: relative; }
+.glow-border { position: relative; isolation: isolate; }
 .glow-border::before {
   content: '';
-  position: absolute; inset: -2px; border-radius: inherit; z-index: -1;
+  position: absolute; inset: -2px; border-radius: inherit; z-index: 0;
   background: conic-gradient(from var(--angle), #a855f7, #7c3aed, #e879f9, #7c3aed, #a855f7);
   animation: spin-angle var(--pulse) linear infinite;
   opacity: 0;
-  transition: opacity var(--micro);
+  transition: opacity var(--micro), filter var(--micro);
 }
 .glow-border:hover::before { opacity: 1; }
+#features .glow-border::before {
+  inset: -4px;
+  opacity: 0.6;
+  filter: brightness(1);
+  animation-duration: 1.8s;
+}
+#features .glow-border:hover::before {
+  opacity: 0.6;
+  filter: brightness(1.9) saturate(1.3);
+}
 .glow-border::after {
   content: '';
   position: absolute; inset: 0; border-radius: inherit;
   background: var(--card-bg, var(--bg-void));
-  z-index: 0;
+  z-index: 1;
 }
-.glow-border > * { position: relative; z-index: 1; }
+.glow-border > * { position: relative; z-index: 2; }
 
 /* Animated underline (Features eyebrow + Footer links) */
 .anim-underline {
@@ -350,6 +360,61 @@
   background: linear-gradient(90deg, transparent 0%, var(--purple-electric) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: footer-sweep var(--breathe) linear infinite;
+}
+
+/* How It Works — robot mascot */
+#how-it-works .hiw-robot-stage {
+  position: relative;
+  height: 64px;
+  margin-top: 20px;
+}
+#how-it-works .hiw-robot-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%);
+}
+#how-it-works .hiw-robot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 5;
+  pointer-events: none;
+  will-change: left;
+}
+#how-it-works .hiw-robot-arm {
+  transform-origin: 38px 40px;
+  transition: transform 0.35s ease-out;
+}
+#how-it-works .hiw-robot.is-pointing .hiw-robot-arm {
+  transform: rotate(-62deg);
+}
+#how-it-works .hiw-robot-leg {
+  transition: transform 0.15s ease-in-out;
+}
+#how-it-works .hiw-robot.is-running .hiw-robot-leg-l {
+  animation: hiw-leg-l 0.28s ease-in-out infinite alternate;
+}
+#how-it-works .hiw-robot.is-running .hiw-robot-leg-r {
+  animation: hiw-leg-r 0.28s ease-in-out infinite alternate;
+}
+@keyframes hiw-leg-l {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+@keyframes hiw-leg-r {
+  from { transform: translateY(-4px); }
+  to { transform: translateY(0); }
+}
+#how-it-works .glow-border.card-pointed {
+  box-shadow: 0 0 22px 6px rgba(255, 255, 255, 0.75) !important;
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 1px;
+  z-index: 2;
 }
 
 /* Blinking subline cursor */

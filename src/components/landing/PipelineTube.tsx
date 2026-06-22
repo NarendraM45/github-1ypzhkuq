@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { RobotMascot } from "./RobotMascot";
 
 type Station = { id: string };
 
@@ -76,6 +77,13 @@ const STATIONS = [
 
 export function HowItWorks() {
   const [hover, setHover] = useState<number | null>(null);
+  const [pointedCard, setPointedCard] = useState<number | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const card0Ref = useRef<HTMLDivElement>(null);
+  const card1Ref = useRef<HTMLDivElement>(null);
+  const card2Ref = useRef<HTMLDivElement>(null);
+  const cardRefs = useMemo(() => [card0Ref, card1Ref, card2Ref], []);
+  const onPointCard = useCallback((index: number | null) => setPointedCard(index), []);
 
   return (
     <section
@@ -93,37 +101,44 @@ export function HowItWorks() {
           </h2>
         </div>
 
-        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-          <PipelineTube highlight={hover !== null ? `dot-${hover % 3}` : null} />
+        <div className="relative">
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
+            <PipelineTube highlight={hover !== null ? `dot-${hover % 3}` : null} />
 
-          {STATIONS.map((s, i) => (
-            <div
-              key={s.num}
-              className="relative"
-              onMouseEnter={() => setHover(i)}
-              onMouseLeave={() => setHover(null)}
-              data-cursor-hover
-            >
+            {STATIONS.map((s, i) => (
               <div
-                className="absolute -top-10 left-0 font-mono text-5xl font-bold transition-opacity duration-300"
-                style={{
-                  opacity: hover === null ? 0.1 : hover === i ? 1 : 0.04,
-                  color: s.color,
-                }}
+                key={s.num}
+                ref={cardRefs[i]}
+                className="relative"
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+                data-cursor-hover
               >
-                {s.num}
+                <div
+                  className="absolute -top-10 left-0 font-mono text-5xl font-bold transition-opacity duration-300"
+                  style={{
+                    opacity: hover === null ? 0.1 : hover === i ? 1 : 0.04,
+                    color: s.color,
+                  }}
+                >
+                  {s.num}
+                </div>
+                <div
+                  className={`glow-border mt-6 rounded-lg p-5 transition-all${pointedCard === i ? " card-pointed" : ""}`}
+                  style={{
+                    ["--card-bg" as string]: "var(--how-bg)",
+                    transform: hover === i ? "translateY(-6px)" : "translateY(0)",
+                  }}
+                >
+                  <Station index={i} active={hover === i} />
+                </div>
               </div>
-              <div
-                className="glow-border mt-6 rounded-lg p-5 transition-all"
-                style={{
-                  ["--card-bg" as string]: "var(--how-bg)",
-                  transform: hover === i ? "translateY(-6px)" : "translateY(0)",
-                }}
-              >
-                <Station index={i} active={hover === i} />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div ref={trackRef} className="hiw-robot-stage">
+            <RobotMascot trackRef={trackRef} cardRefs={cardRefs} onPointCard={onPointCard} />
+          </div>
         </div>
       </div>
     </section>
