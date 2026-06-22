@@ -12,9 +12,10 @@ export default function HeroBlobCanvas({ textRefs }) {
     /* ════════════════════════════════════════════════════════════════════════
        RENDERER
        ════════════════════════════════════════════════════════════════════════ */
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.setSize(innerWidth, innerHeight);
+    renderer.setClearColor(0x09090f, 1);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     
@@ -29,65 +30,60 @@ export default function HeroBlobCanvas({ textRefs }) {
     /* ════════════════════════════════════════════════════════════════════════
        PARTICLES — Float32Array, scalable & zero-texture
        ════════════════════════════════════════════════════════════════════════ */
-    const NP = 4200;
-    const pp = new Float32Array(NP * 3);
-    const pc = new Float32Array(NP * 3);
-    const ps = new Float32Array(NP);
+    const STAR_COUNT = 300;
+    const sp = new Float32Array(STAR_COUNT * 3);
+    const ss = new Float32Array(STAR_COUNT);
+    const so = new Float32Array(STAR_COUNT);
+    const sd = new Float32Array(STAR_COUNT);
 
-    for (let i = 0; i < NP; i++) {
-      const r = 6.0 + Math.random() * 18.0;
-      const theta = Math.random() * Math.PI * 2.0;
-      const phi = Math.acos(2.0 * Math.random() - 1.0);
-      pp[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      pp[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      pp[i * 3 + 2] = r * Math.cos(phi);
-
-      const rn = Math.random();
-      if (rn < 0.54) {                    /* purple */
-        pc[i * 3] = .25 + Math.random() * .3; pc[i * 3 + 1] = .01; pc[i * 3 + 2] = .50 + Math.random() * .4;
-      } else if (rn < 0.80) {             /* magenta */
-        pc[i * 3] = .55 + Math.random() * .4; pc[i * 3 + 1] = .04; pc[i * 3 + 2] = .68 + Math.random() * .3;
-      } else {                            /* white-blue */
-        pc[i * 3] = .65 + Math.random() * .3; pc[i * 3 + 1] = .55 + Math.random() * .2; pc[i * 3 + 2] = 1.0;
-      }
-      ps[i] = 0.3 + Math.random() * 2.5;
+    for (let i = 0; i < STAR_COUNT; i++) {
+      sp[i * 3] = (Math.random() - 0.5) * 18.0;
+      sp[i * 3 + 1] = (Math.random() - 0.5) * 10.0;
+      sp[i * 3 + 2] = -2.5 - Math.random() * 8.0;
+      ss[i] = 0.8 + Math.random() * 0.7;
+      so[i] = 0.3 + Math.random() * 0.6;
+      sd[i] = Math.random() * Math.PI * 2.0;
     }
 
-    const pGeo = new THREE.BufferGeometry();
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pp, 3));
-    pGeo.setAttribute('aColor', new THREE.BufferAttribute(pc, 3));
-    pGeo.setAttribute('aSize', new THREE.BufferAttribute(ps, 1));
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+    starGeo.setAttribute('aSize', new THREE.BufferAttribute(ss, 1));
+    starGeo.setAttribute('aOpacity', new THREE.BufferAttribute(so, 1));
+    starGeo.setAttribute('aSeed', new THREE.BufferAttribute(sd, 1));
 
-    const pU = { uTime: { value: 0.0 } };
-    const pMat = new THREE.ShaderMaterial({
-      uniforms: pU,
+    const starU = { uTime: { value: 0.0 } };
+    const starMat = new THREE.ShaderMaterial({
+      uniforms: starU,
       transparent: true,
-      blending: THREE.AdditiveBlending,
       depthWrite: false,
+      blending: THREE.NormalBlending,
       vertexShader: `
-        attribute vec3  aColor;
         attribute float aSize;
-        varying vec3    vColor;
-        uniform float   uTime;
-        void main(){
-          vColor = aColor;
+        attribute float aOpacity;
+        attribute float aSeed;
+        varying float vOpacity;
+        uniform float uTime;
+        void main() {
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          float tw = .55 + .45*sin(uTime*1.2 + position.x*4.6 + position.y*2.2 + position.z*3.1);
-          gl_PointSize  = aSize * tw * (290.0 / -mv.z);
-          gl_Position   = projectionMatrix * mv;
+          float twinkle = sin((uTime * 0.75) + aSeed) * 0.12;
+          vOpacity = clamp(aOpacity + twinkle, 0.3, 0.95);
+          gl_PointSize = clamp(aSize * (10.0 / -mv.z), 0.9, 2.2);
+          gl_Position = projectionMatrix * mv;
         }
       `,
       fragmentShader: `
-        varying vec3 vColor;
-        void main(){
-          float d = length(gl_PointCoord - .5);
-          if(d > .5) discard;
-          float a = 1.0 - smoothstep(.12, .5, d);
-          gl_FragColor = vec4(vColor, a * .65);
+        varying float vOpacity;
+        void main() {
+          float d = length(gl_PointCoord - vec2(0.5));
+          if (d > 0.5) discard;
+          float alpha = (1.0 - smoothstep(0.12, 0.5, d)) * vOpacity;
+          gl_FragColor = vec4(vec3(1.0), alpha);
         }
       `,
     });
-    scene.add(new THREE.Points(pGeo, pMat));
+    const starField = new THREE.Points(starGeo, starMat);
+    starField.renderOrder = -1;
+    scene.add(starField);
 
     /* ════════════════════════════════════════════════════════════════════════
        NOISE LIBRARY  (Stefan Gustavson Simplex 3D + 5-octave FBM)
@@ -333,7 +329,7 @@ export default function HeroBlobCanvas({ textRefs }) {
       const t = clock.getElapsedTime();
 
       blobU.uTime.value = t;
-      pU.uTime.value    = t;
+      starU.uTime.value = t;
 
       /* slow Y-axis self-rotation + gentle X drift */
       blob.rotation.y += 0.0010;
@@ -354,6 +350,11 @@ export default function HeroBlobCanvas({ textRefs }) {
         if (animFrameId) cancelAnimationFrame(animFrameId);
         
         // Dispose Three.js objects
+        starGeo.dispose();
+        starMat.dispose();
+        blob.geometry.dispose();
+        blob.material.dispose();
+        composer.dispose();
         renderer.dispose();
         scene.clear();
         tl.kill();
@@ -376,9 +377,10 @@ export default function HeroBlobCanvas({ textRefs }) {
             position: 'absolute', 
             inset: 0, 
             zIndex: 0, 
-            pointerEvents: 'none' 
+            pointerEvents: 'none',
+            backgroundColor: '#09090f'
         }} 
-        className="hero-blob-container max-md:bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] max-md:from-accent/20 max-md:via-transparent max-md:to-transparent"
+        className="hero-blob-container"
     />
   );
 }

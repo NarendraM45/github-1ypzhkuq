@@ -86,7 +86,7 @@ export const Hero = () => {
   return (
     <section
       id="top"
-      style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', background: '#05010D', display: 'flex', flexDirection: 'column' }}
+      style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', background: '#09090f', display: 'flex', flexDirection: 'column' }}
       className="pt-32 pb-20 md:pt-40 md:pb-28"
     >
       <HeroBlobCanvas textRefs={{ badgeRef, h1Ref, subRef, ctasRef, statsRef }} />
