@@ -6,43 +6,9 @@ import { ArrowRight, Infinity as InfinityIcon, ShieldCheck } from "lucide-react"
 import { MagneticButton } from "./shared/MagneticButton";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
-const CrystallineBlob = lazy(() => import("./CrystallineBlob"));
+const HeroBlob = lazy(() => import("./HeroBlob"));
 
 const WORDMARK = "MockDrop";
-
-/** CSS-only fallback: layered magenta radial gradients + screen blending
- *  approximates the volumetric crystal glow without WebGL. */
-const BlobFallback = () => (
-  <div aria-hidden className="pointer-events-none absolute right-[-6%] top-1/2 -translate-y-1/2 h-[28rem] w-[28rem]">
-    <div
-      className="absolute inset-0 rounded-full"
-      style={{
-        background:
-          "radial-gradient(circle at 35% 35%, #ffffff 0%, #ff3df0 18%, #ff00cc 38%, #cc00ff 60%, transparent 78%)",
-        filter: "blur(2px)",
-        mixBlendMode: "screen",
-      }}
-    />
-    <div
-      className="absolute inset-[-20%] rounded-full"
-      style={{
-        background:
-          "radial-gradient(circle at 50% 50%, rgba(255,0,204,0.55) 0%, rgba(204,0,255,0.35) 40%, transparent 72%)",
-        filter: "blur(28px)",
-        mixBlendMode: "screen",
-      }}
-    />
-    <div
-      className="absolute inset-[-50%] rounded-full"
-      style={{
-        background:
-          "radial-gradient(circle at 50% 50%, rgba(204,0,255,0.35) 0%, rgba(124,58,237,0.18) 55%, transparent 80%)",
-        filter: "blur(48px)",
-        mixBlendMode: "screen",
-      }}
-    />
-  </div>
-);
 
 const PHRASES = ["Mock your endpoints.", "Test your UI now.", "Ship faster."];
 
@@ -143,6 +109,13 @@ export const Hero = () => {
   const reduced = usePrefersReducedMotion();
   const pointer = useRef({ x: 0, y: 0 });
 
+  // Mount the blob only on >= 768px viewports and when motion is allowed
+  const [canMountBlob, setCanMountBlob] = useState(false);
+  useGSAP(() => {
+    if (typeof window === "undefined") return;
+    setCanMountBlob(window.innerWidth >= 768);
+  }, []);
+
   // Global pointer tracking for blob cursor-follow.
   useGSAP(() => {
     const onMove = (e: MouseEvent) => {
@@ -212,13 +185,23 @@ export const Hero = () => {
         <rect width="100%" height="100%" filter="url(#hero-noise)" />
       </svg>
 
-      {/* 3D crystalline blob — magenta geode with breathing glow */}
-      {!reduced && (
-        <Suspense fallback={<BlobFallback />}>
-          <CrystallineBlob pointer={pointer} />
+      {/* Blob canvas */}
+      {canMountBlob && !reduced && (
+        <Suspense fallback={null}>
+          <HeroBlob disabled={false} pointer={pointer} />
         </Suspense>
       )}
-      {reduced && <BlobFallback />}
+      {(!canMountBlob || reduced) && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute right-[8%] top-1/2 -translate-y-1/2 h-72 w-72 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle at 30% 30%, #e879f9, #7c3aed 50%, transparent 75%)",
+            filter: "blur(8px)",
+          }}
+        />
+      )}
 
       <div className="container relative z-10 pt-40 md:pt-48 pb-28">
         {/* Wordmark (load sequence) */}
